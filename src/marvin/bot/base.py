@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from fastapi import HTTPException, status
 from openai.error import InvalidRequestError
+from prefect.events import emit_event
 from pydantic import Field, validator
 
 import marvin
@@ -669,6 +670,16 @@ class Bot(MarvinBaseModel, LoggerMixin):
         return new_messages
 
     async def _run_plugin(self, plugin_name: str, plugin_inputs: dict) -> str:
+        if marvin.settings.emit_prefect_events:
+            await emit_event(
+                event=f"marvin.bot.plugin.{plugin_name}.run",
+                resource=f"marvin.bot.plugin.{plugin_name}",
+                payload={
+                    "plugin_name": plugin_name,
+                    "plugin_inputs": plugin_inputs,
+                },
+            )
+
         plugin = next((p for p in self.plugins if p.name == plugin_name.strip()), None)
         if plugin is None:
             return f'Plugin "{plugin_name}" not found.'

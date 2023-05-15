@@ -123,6 +123,9 @@ class Settings(BaseSettings):
     # GITHUB
     GITHUB_TOKEN: SecretStr = Field("", env=["MARVIN_GITHUB_TOKEN", "GITHUB_TOKEN"])
 
+    # PREFECT
+    emit_prefect_events: bool = False
+
     # REDIS
     redis_connection_url: SecretStr = ""
 
