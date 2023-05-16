@@ -3,7 +3,9 @@ import inspect
 import re
 import sys
 from functools import partial
-from typing import Callable, TypeVar
+from typing import Any, Callable, Iterable, TypeVar
+
+from prefect import flow, task
 
 from marvin.bot import Bot
 from marvin.bot.history import InMemoryHistory
@@ -189,6 +191,30 @@ class AIFunction:
         a passed function
         """
         raise NotImplementedError()
+
+    def map(self, iterable: Iterable[A]) -> Iterable[T]:
+        """
+        Map the AI function over an iterable using a flow.
+
+        Example:
+            @ai_fn
+            def complementary_color(color: str):
+                "Returns a color that is complementary to the input color."
+
+            colors = complementary_color.map(["blue", "green", "red"])
+
+            print([color.result() for color in colors]) # ['orange', 'magenta', 'cyan']
+        """
+
+        @task
+        def wrapped_fn(item: Any):
+            return self(item)
+
+        @flow
+        def wrapping_flow():
+            return wrapped_fn.map(iterable)
+
+        return wrapping_flow()
 
 
 def ai_fn(
